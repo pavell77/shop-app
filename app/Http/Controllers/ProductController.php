@@ -12,7 +12,11 @@ class ProductController extends Controller
      */
     public function index()
     {
-        //
+        // Беремо всі активні товари з пагінацією по 12 на сторінку
+        $products = \App\Models\Product::where('is_active', true)->paginate(12);
+
+        // Передаємо їх у шаблон
+        return view('products.index', compact('products'));
     }
 
     /**
