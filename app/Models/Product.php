@@ -18,5 +18,11 @@ class Product extends Model
         'price',
         'stock',
         'is_active',
+        'category_id'
     ];
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class); // Товар належить категорії
+    }
 }
