@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -44,7 +45,18 @@ class ProductController extends Controller
             'price' => 'required|numeric|gt:0', // gt:0 означає "greater than 0"
             'stock' => 'required|integer|min:0',
             'category_id' => 'nullable|exists:categories,id',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+
+        // 2. Обробка зображення
+        if ($request->hasFile('image')) {
+            // Зберігаємо файл у папку storage/app/public/products
+            // Метод store поверне шлях, наприклад: products/filename.jpg
+            $path = $request->file('image')->store('products', 'public');
+            
+            // Додаємо шлях у масив для бази даних
+            $validated['image'] = $path;
+        }
 
         // Додаємо автоматичну генерацію slug
         $validated['slug'] = \Illuminate\Support\Str::slug($validated['name']);
@@ -86,7 +98,19 @@ class ProductController extends Controller
             'price' => 'required|numeric|gt:0', // gt:0 означає "greater than 0"
             'stock' => 'required|integer|min:0',
             'category_id' => 'nullable|exists:categories,id',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+
+        if ($request->hasFile('image')) {
+            // 1. Видаляємо стару картинку, якщо вона є
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
+
+            // 2. Зберігаємо нову
+            $path = $request->file('image')->store('products', 'public');
+            $validated['image'] = $path;
+        }
 
         $product->update($validated);
 
@@ -98,6 +122,9 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
+        if ($product->image) {
+            Storage::disk('public')->delete($product->image);
+        }
         $product->delete();
         return redirect()->route('products.index')->with('success', 'Товар видалено!');
     }

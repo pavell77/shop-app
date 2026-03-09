@@ -24,6 +24,19 @@
                             Категорія: {{ $product->category->name ?? 'Без категорії' }}
                         </p>
                         <p class="text-gray-600 text-sm mt-2">{{ Str::limit($product->description, 100) }}</p>
+                        <div class="flex items-center space-x-4">
+                            @if($product->image)
+                                <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-16 h-16 object-cover rounded shadow">
+                            @else
+                                <div class="w-16 h-16 bg-gray-200 flex items-center justify-center rounded text-gray-400 text-xs">
+                                    No Photo
+                                </div>
+                            @endif
+                            
+                            <div>
+                                <h3 class="text-lg font-bold">{{ $product->name }}</h3>
+                                </div>
+                        </div>
                         <div class="mt-4 flex justify-between items-center">
                             <span class="text-xl font-semibold text-indigo-600">${{ $product->price }}</span>
                             <span class="text-xs text-gray-400">Stock: {{ $product->stock }}</span>

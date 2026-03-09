@@ -8,7 +8,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <form action="{{ route('products.update', $product) }}" method="POST" class="space-y-4">
+                <form action="{{ route('products.update', $product) }}" method="POST" class="space-y-4" enctype="multipart/form-data">
                     @csrf
                     @method('PATCH')
                     
@@ -36,6 +36,20 @@
                         <x-input-label for="description" :value="__('Опис')" />
                         <textarea name="description" id="description" rows="4" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-gray-700">{{ old('description', $product->description) }}</textarea>
                         <x-input-error :messages="$errors->get('description')" class="mt-2" />
+                    </div>
+
+                    <div class="mt-4">
+                        <x-input-label for="image" :value="__('Зображення товару')" />
+                        
+                        @if($product->image)
+                            <div class="mb-2">
+                                <img src="{{ asset('storage/' . $product->image) }}" alt="Current Image" class="w-32 h-32 object-cover rounded">
+                                <p class="text-xs text-gray-500">Поточне фото</p>
+                            </div>
+                        @endif
+
+                        <input type="file" name="image" id="image" class="mt-1 block w-full text-gray-700" accept="image/*">
+                        <x-input-error :messages="$errors->get('image')" class="mt-2" />
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
