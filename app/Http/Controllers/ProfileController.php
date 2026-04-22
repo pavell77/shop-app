@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -56,5 +57,29 @@ class ProfileController extends Controller
         $request->session()->regenerateToken();
 
         return Redirect::to('/');
+    }
+
+    public function updateAvatar(Request $request): RedirectResponse
+    {
+        // 1. Валідація: переконуємось, що це точно картинка
+        $request->validate([
+            'avatar' => ['required', 'image', 'max:2048'],
+        ]);
+
+        $user = $request->user();
+
+        // 2. Видаляємо старий файл, щоб не забивати сервер
+        if ($user->avatar) {
+            Storage::disk('public')->delete($user->avatar);
+        }
+
+        // 3. Зберігаємо новий файл
+        $path = $request->file('avatar')->store('avatars', 'public');
+
+        // 4. Оновлюємо шлях у БД
+        $user->update(['avatar' => $path]);
+
+        // 5. Повертаємо користувача назад з повідомленням
+        return redirect()->route('profile.edit')->with('status', 'avatar-updated');
     }
 }
