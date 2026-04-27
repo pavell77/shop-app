@@ -6,18 +6,19 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests; 
 
 class ProductController extends Controller
 {
+    use AuthorizesRequests; // ДОДАЙ ЦЕЙ ТРЕЙТ
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        // Беремо всі активні товари з пагінацією по 12 на сторінку
         $products = Product::where('is_active', true)->paginate(12);
-
-        // Передаємо їх у шаблон
         return view('products.index', compact('products'));
     }
 
@@ -26,10 +27,10 @@ class ProductController extends Controller
      */
     public function create()
     {
-        // Отримуємо всі категорії з бази
+        // Перевіряємо, чи має користувач право створювати товари
+        $this->authorize('create', Product::class);
+
         $categories = Category::all();
-        
-        // Передаємо їх у в'юшку
         return view('products.create', compact('categories'));
     }
 
@@ -38,34 +39,28 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        // Валідація — це безпека!
+        // Перевіряємо право створення перед валідацією
+        $this->authorize('create', Product::class);
+
         $validated = $request->validate([
-            'name' => 'required|min:3|max:255|unique:products,name,' . ($product->id ?? ''),
+            'name' => 'required|min:3|max:255|unique:products,name',
             'description' => 'required|min:10',
-            'price' => 'required|numeric|gt:0', // gt:0 означає "greater than 0"
+            'price' => 'required|numeric|gt:0',
             'stock' => 'required|integer|min:0',
             'category_id' => 'nullable|exists:categories,id',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        // 2. Обробка зображення
         if ($request->hasFile('image')) {
-            // Зберігаємо файл у папку storage/app/public/products
-            // Метод store поверне шлях, наприклад: products/filename.jpg
             $path = $request->file('image')->store('products', 'public');
-            
-            // Додаємо шлях у масив для бази даних
             $validated['image'] = $path;
         }
 
-        // Додаємо автоматичну генерацію slug
-        $validated['slug'] = \Illuminate\Support\Str::slug($validated['name']);
+        $validated['slug'] = Str::slug($validated['name']);
         $validated['is_active'] = true;
 
-        // Створюємо запис у базі
         Product::create($validated);
 
-        // Повертаємося до списку з повідомленням про успіх
         return redirect()->route('products.index')->with('success', 'Товар успішно додано!');
     }
 
@@ -74,7 +69,8 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        //
+        // Перегляд товару доступний всім (якщо не закрити окремо)
+        return view('products.show', compact('product'));
     }
 
     /**
@@ -82,32 +78,33 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        $categories = Category::all(); // Додаємо отримання категорій
+        $this->authorize('update', $product);
+
+        $categories = Category::all();
         return view('products.edit', compact('product', 'categories'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    // 2. Оновити дані в базі
     public function update(Request $request, Product $product)
     {
+        $this->authorize('update', $product);
+
         $validated = $request->validate([
-            'name' => 'required|min:3|max:255|unique:products,name,' . ($product->id ?? ''),
+            'name' => 'required|min:3|max:255|unique:products,name,' . $product->id,
             'description' => 'required|min:10',
-            'price' => 'required|numeric|gt:0', // gt:0 означає "greater than 0"
+            'price' => 'required|numeric|gt:0',
             'stock' => 'required|integer|min:0',
             'category_id' => 'nullable|exists:categories,id',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         if ($request->hasFile('image')) {
-            // 1. Видаляємо стару картинку, якщо вона є
             if ($product->image) {
                 Storage::disk('public')->delete($product->image);
             }
 
-            // 2. Зберігаємо нову
             $path = $request->file('image')->store('products', 'public');
             $validated['image'] = $path;
         }
@@ -122,6 +119,8 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
+        $this->authorize('delete', $product);
+
         if ($product->image) {
             Storage::disk('public')->delete($product->image);
         }
