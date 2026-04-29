@@ -41,6 +41,14 @@
                             <span class="text-xl font-semibold text-indigo-600">${{ $product->price }}</span>
                             <span class="text-xs text-gray-400">Stock: {{ $product->stock }}</span>
                         </div>
+                        <div class="mt-4">
+                            <form action="{{ route('cart.add', $product) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="w-full flex justify-center items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 transition duration-150">
+                                    Додати в кошик
+                                </button>
+                            </form>
+                        </div>
                         <div class="mt-4 flex gap-2">
                             <a href="{{ route('products.edit', $product) }}" class="text-xs bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">
                                 Редагувати
