@@ -9,9 +9,11 @@
     </x-slot>
 
     @if (session('success'))
-    <div class="mb-4 font-medium text-sm text-green-600 bg-green-100 p-4 rounded-lg">
-            {{ session('success') }}
-    </div>
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4">
+            <div class="font-medium text-sm text-green-600 bg-green-100 p-4 rounded-lg text-center shadow-sm border border-green-200">
+                {{ session('success') }}
+            </div>
+        </div>
     @endif
 
     <div class="py-12">
