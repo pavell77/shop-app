@@ -30,7 +30,18 @@ class CartController extends Controller
         }
 
         session()->put('cart', $cart);
-        return redirect()->route('cart.index')->with('success', 'Товар додано!');
+
+        // Рахуємо загальну кількість одиниць у кошику
+        $totalCount = array_sum(array_column($cart, 'quantity'));
+
+        if ($request->ajax()) {
+            return response()->json([
+                'message' => 'Товар додано!',
+                'totalCount' => $totalCount
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Товар додано!');
     }
 
     public function remove($id)
