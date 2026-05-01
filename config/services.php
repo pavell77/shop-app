@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'wayforpay' => [
+        'account' => env('WAYFORPAY_ACCOUNT'),
+        'secret'  => env('WAYFORPAY_SECRET'),
+        'domain'  => env('WAYFORPAY_DOMAIN'),
+    ],
+
 ];

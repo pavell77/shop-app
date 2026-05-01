@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Services\OrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\WayForPayService;
 
 class CartController extends Controller
 {
@@ -57,25 +58,27 @@ class CartController extends Controller
     /**
      * Оформлення замовлення
      */
-    public function checkout(OrderService $orderService)
+    public function checkout(OrderService $orderService, WayForPayService $wayForPayService)
     {
         if (!Auth::check()) {
-            return redirect()->route('login')->with('error', 'Будь ласка, увійдіть, щоб оформити замовлення.');
+            return redirect()->route('login')->with('error', 'Будь ласка, увійдіть.');
         }
 
-        // Отримуємо актуальний вміст кошика з сесії
         $cart = session()->get('cart', []);
 
         try {
-            // Передаємо два обов'язкові аргументи: ID користувача та масив кошика
+            // 1. Створюємо замовлення (тут же списується склад і очищується сесія)
             $order = $orderService->createOrderFromCart(Auth::id(), $cart);
             
-            return redirect()->route('products.index')
-                ->with('success', "Замовлення №{$order->id} успішно створено!");
-                
+            // 2. Генеруємо HTML-форму WayForPay
+            $paymentForm = $wayForPayService->getPaymentForm($order);
+            
+            // 3. Повертаємо в'юху з кнопкою
+            return view('cart.checkout', compact('order', 'paymentForm'));
+                    
         } catch (\Exception $e) {
             return redirect()->route('cart.index')
-                ->with('error', 'Помилка оформлення: ' . $e->getMessage());
+                ->with('error', 'Помилка: ' . $e->getMessage());
         }
     }
 }
