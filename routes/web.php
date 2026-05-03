@@ -3,16 +3,16 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\PaymentController;
 
 // 1. ПУБЛІЧНІ МАРШРУТИ (Доступні всім, включаючи роботів оплати)
 Route::get('/', function () {
     return view('welcome');
 });
 
-// Роути оплати мають бути ТУТ (публічні)
-Route::post('/payment/callback', function() {
-    return response('OK', 200);
-})->name('payment.callback');
+// Було:
+// Route::post('/payment/callback', function() {return response('OK', 200);})->name('payment.callback');
+Route::post('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
 
 Route::match(['get', 'post'], '/payment/success', function () {
     return view('payment.success');
