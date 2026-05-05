@@ -4,39 +4,78 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Mail\OrderPaidMail;
+use App\Services\WayForPayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
+    protected $wayForPayService;
+
+    /**
+     * Впроваджуємо сервіс через конструктор
+     */
+    public function __construct(WayForPayService $wayForPayService)
+    {
+        $this->wayForPayService = $wayForPayService;
+    }
+
+    /**
+     * Обробка Callback від WayForPay
+     */
     public function callback(Request $request)
     {
-        // 1. Отримуємо всі дані від WayForPay
+        // 1. Отримуємо дані та логуємо для відладки
         $data = $request->all();
-        
-        // Логуємо для відладки (можна подивитися в storage/logs/laravel.log)
         Log::info('WayForPay Callback Data:', $data);
 
-        // 2. Витягуємо чистий ID замовлення (якщо ми додавали час через підкреслення)
+        // 2. ПЕРЕВІРКА ПІДПИСУ (Безпека)
+        if (!$this->wayForPayService->isSignatureValid($data)) {
+            Log::warning('WayForPay Callback: Invalid signature attempted', ['data' => $data]);
+            return response()->json(['status' => 'declined', 'error' => 'Invalid signature']);
+        }
+
+        // 3. Витягуємо чистий ID замовлення
         $orderReference = $data['orderReference'] ?? '';
         $orderId = explode('_', $orderReference)[0];
 
         $order = Order::find($orderId);
 
-        // 3. Перевіряємо статус транзакції
-        if ($order && isset($data['transactionStatus']) && $data['transactionStatus'] === 'Approved') {
+        if (!$order) {
+            Log::error("WayForPay Callback: Order {$orderId} not found");
+            return response()->json(['status' => 'declined', 'error' => 'Order not found']);
+        }
+
+        // 4. Перевіряємо статус транзакції
+        if (isset($data['transactionStatus']) && $data['transactionStatus'] === 'Approved') {
             
             // Оновлюємо статус замовлення в БД
             $order->update(['status' => 'paid']);
 
-            // ВІДПРАВКА ЛИСТА (йде в Redis через ShouldQueue)
-            Mail::to($order->user->email)->send(new OrderPaidMail($order));
+            // ВІДПРАВКА ЛИСТА (йде в чергу, якщо налаштовано ShouldQueue)
+            try {
+                Mail::to($order->user->email)->send(new OrderPaidMail($order));
+            } catch (\Exception $e) {
+                Log::error("Failed to send OrderPaidMail for order {$order->id}: " . $e->getMessage());
+            }
 
-            // Важливо повернути саме таку відповідь для WayForPay
-            return response()->json(['status' => 'accept']);
+            // 5. Повертаємо офіційну відповідь через SDK (формат accept)
+            return response()->json($this->wayForPayService->getSuccessResponse($orderReference));
         }
 
+        Log::info("Order {$order->id} payment was not approved. Status: " . ($data['transactionStatus'] ?? 'unknown'));
+        
         return response()->json(['status' => 'declined']);
+    }
+
+    /**
+     * Сторінка, на яку WayForPay повертає клієнта після оплати
+     */
+    public function success()
+    {
+        return view('payment.success', [
+            'message' => 'Дякуємо! Ваша оплата успішно отримана.'
+        ]);
     }
 }

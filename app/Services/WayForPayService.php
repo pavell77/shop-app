@@ -6,27 +6,22 @@ use WayForPay\SDK\Wizard\PurchaseWizard;
 use WayForPay\SDK\Domain\Product;
 use WayForPay\SDK\Credential\AccountSecretCredential;
 use WayForPay\SDK\Collection\ProductCollection;
+use WayForPay\SDK\Handler\ServiceUrlHandler;
 
 class WayForPayService
 {
     /**
-     * Генерує HTML-форму для оплати замовлення через WayForPay.
-     *
-     * @param  \App\Models\Order  $order
-     * @return string
+     * Генерує HTML-форму для оплати замовлення.
      */
     public function getPaymentForm($order)
     {
-        // Створюємо об'єкт облікових даних мерчанта
         $credential = new AccountSecretCredential(
             config('services.wayforpay.account'),
             config('services.wayforpay.secret')
         );
 
-        // Створюємо колекцію продуктів
         $products = new ProductCollection();
         
-        // Перевіряємо наявність позицій у замовленні
         if (isset($order->orderItems) && $order->orderItems->count() > 0) {
             foreach ($order->orderItems as $item) {
                 $products->add(new Product(
@@ -36,7 +31,6 @@ class WayForPayService
                 ));
             }
         } else {
-            // Резервний варіант, якщо позиції не завантажені
             $products->add(new Product(
                 "Замовлення №{$order->id}", 
                 $order->total_price, 
@@ -44,18 +38,55 @@ class WayForPayService
             ));
         }
 
-        // Налаштування платіжного візарда
         $wizard = PurchaseWizard::get($credential)
-            ->setOrderReference($order->id . '_' . time()) // Додаємо time() для унікальності в тестах
+            ->setOrderReference($order->id . '_' . time()) 
             ->setAmount($order->total_price)
             ->setCurrency('UAH')
             ->setOrderDate(new \DateTime())
             ->setMerchantDomainName(config('services.wayforpay.domain'))
             ->setServiceUrl(route('payment.callback'))
-            ->setReturnUrl(route('payment.success')) // Тепер веде на окрему сторінку успіху
+            ->setReturnUrl(route('payment.success')) 
             ->setProducts($products);
 
-        // Повертаємо HTML-код форми у вигляді рядка
         return $wizard->getForm()->getAsString();
+    }
+
+    /**
+     * Перевіряє підпис від WayForPay для Callback запиту.
+     * 
+     * @param array $data Дані з $request->all()
+     * @return bool
+     */
+    public function isSignatureValid(array $data): bool
+    {
+        $credential = new AccountSecretCredential(
+            config('services.wayforpay.account'),
+            config('services.wayforpay.secret')
+        );
+
+        try {
+            // SDK автоматично перевіряє signature всередині parseRequestData
+            $handler = new ServiceUrlHandler($credential);
+            $response = $handler->parseRequestData($data);
+            
+            return $response->getReason()->isOK();
+        } catch (\Exception $e) {
+            \Log::error("WayForPay Signature error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Генерує відповідь для WayForPay після успішної обробки callback.
+     */
+    public function getSuccessResponse($orderReference)
+    {
+        $credential = new AccountSecretCredential(
+            config('services.wayforpay.account'),
+            config('services.wayforpay.secret')
+        );
+
+        $handler = new ServiceUrlHandler($credential);
+        return $handler->getSuccessResponse($orderReference);
     }
 }
