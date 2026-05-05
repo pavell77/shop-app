@@ -11,9 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function ($table) {
-            // Ми просто додаємо зв'язок до вже існуючої колонки
-            $table->foreign('role_id')->references('id')->on('roles');
+        Schema::table('users', function (Blueprint $table) {
+            // 1. Спочатку створюємо колонку, якщо її ще немає
+            // unsignedBigInteger, бо roles.id зазвичай такий самий
+            if (!Schema::hasColumn('users', 'role_id')) {
+                $table->unsignedBigInteger('role_id')->default(2)->after('id'); 
+            }
+
+            // 2. Тепер додаємо зовнішній ключ
+            $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
         });
     }
 
