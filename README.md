@@ -1,59 +1,71 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+## **README — shop-app** 
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Демонстраційний e-commerce проєкт на базі стабільного стеку Laravel 12 для професійного портфоліо.** 
 
-## About Laravel
+## |[#] 
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## **Концепція проєкту** 
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Цей  додаток  розроблено  як  класичний,  канонічний  інтернет-магазин  на  базі **Laravel  12  (PHP 8.3/8.4)** . У той час як паралельний проєкт на Laravel 13 є експериментальним майданчиком для тестування найсвіжіших реактивних технологій (Livewire Volt) та інтеграції ШІ, **цей проєкт (shop-app) свідомо фокусується на класичному, максимально обкатаному та стабільному стеку** , який зараз розгорнутий у більшості комерційних компаній та використовується сотнями розробників на реальних продакшен-серверах. 
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Тут відпрацьовано архітектурні патерни, чисте логування, побудову Feature-тестів та взаємодію з сесіями в класичному Blade-середовищі без зайвої сирості нових релізів. 
 
-## Learning Laravel
+## **Основний технологічний стек** |[7] 
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- **Backend:** PHP 8.3+ / Laravel 12 
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- **Frontend & UI:** Classic Blade Templates / Tailwind CSS / Vanilla JS (мінімалістичний та передбачуваний рендеринг без SPA-ускладнень) 
 
-## Laravel Sponsors
+- **Environment:** Laravel Sail (Docker: App, MySQL, Mailpit) 
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- **Testing:** Pest Framework (TDD підхід, повна ізоляція тестів) 
 
-### Premium Partners
+## **Що реалізовано та обкатано в проєкті** | 7 
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## **1. Класична логіка кошика (Session Management)** 
 
-## Contributing
+- Реалізовано надійне збереження стану кошика через сесії Laravel. 
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- 
 
-## Code of Conduct
+- CRUD-операції: додавання товарів, динамічна зміна кількості безпосередньо у кошику, видалення позицій та повне очищення. 
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- Жорсткий контроль типізації для IDE через анотації `/** @var User $user */` при роботі з `actingAs($user)` у тестах, що забезпечує чистоту коду. 
 
-## Security Vulnerabilities
+## **2. Контроль доступу та Безпека** 
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- Інтегровано базовий middleware захисту маршрутів. 
 
-## License
+- 
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- Чітке розмежування гостьових сесій для покупців та авторизованих користувачів. Маршрути кошика надійно захищені мідлвером `auth` та `verified` . 
+
+1 
+
+## **3. Повне тестове покриття (Pest TDD)** 
+
+- Написано пакет функціональних тестів (Feature Tests) для `CartController` та `ProductController` . 
+
+- Тести повністю ізольовані від зовнішніх сидерів, використовують фабрики (Factories) та проходять стабільно на 100% (4/4 PASS). 
+
+## **`🛠️` Інструкція з розгортання (Quick Start)** 
+
+## **Крок 1. Клонування та .env** 
+
+`git clone https://github.com/pavell77/shop-app.git cd shop-app cp .env.example .env` 
+
+## **Крок 2. Запуск Docker через Sail** 
+
+`composer install ./vendor/bin/sail up -d` 
+
+## **Крок 3. Міграції та генерація ключів** 
+
+`./vendor/bin/sail artisan key:generate ./vendor/bin/sail artisan migrate --seed` 
+
+## **Крок 4. Запуск тестів** 
+
+Перевірка працездатності всього класичного e-commerce функціоналу: 
+
+`./vendor/bin/sail pest` 
+
+_Проєкт демонструє вміння будувати передбачувану, чисту та легко підтримувану архітектуру на базі перевіреного часом і бізнесом стеку Laravel 12._ 
